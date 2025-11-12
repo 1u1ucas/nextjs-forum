@@ -24,6 +24,14 @@ export async function DELETE(
         // Vérifier que l'utilisateur est le propriétaire
         const conversation = await prisma.conversation.findUnique({
             where: { id },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        role: true,
+                    },
+                },
+            },
         });
 
         if (!conversation) {
@@ -35,7 +43,10 @@ export async function DELETE(
         }
 
         const isOwner = conversation.userId === session.user.id;
-        const canModerate = ["ADMIN", "MODERATOR"].includes(session.user.role ?? "USER");
+        const targetRole = conversation.user?.role ?? "USER";
+        const sessionRole = session.user.role ?? "USER";
+        const canModerate =
+            sessionRole === "ADMIN" || (sessionRole === "MODERATOR" && targetRole === "USER");
 
         if (!isOwner && !canModerate) {
             console.log(

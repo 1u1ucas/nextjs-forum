@@ -35,6 +35,7 @@ export async function POST(
                         name: true,
                         email: true,
                         image: true,
+                        role: true,
                     },
                 },
             },

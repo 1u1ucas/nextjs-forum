@@ -50,7 +50,19 @@ export async function POST(request: Request) {
                 },
             },
             include: {
-                messages: true,
+                messages: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                image: true,
+                                role: true,
+                            },
+                        },
+                    },
+                },
             },
         });
 

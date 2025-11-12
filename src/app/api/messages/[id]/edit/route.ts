@@ -28,6 +28,14 @@ export async function PATCH(
         // Vérifier que l'utilisateur est le propriétaire
         const message = await prisma.message.findUnique({
             where: { id },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        role: true,
+                    },
+                },
+            },
         });
 
         if (!message) {
@@ -38,7 +46,10 @@ export async function PATCH(
         }
 
         const isOwner = message.userId === session.user.id;
-        const canModerate = ["ADMIN", "MODERATOR"].includes(session.user.role ?? "USER");
+        const targetRole = message.user?.role ?? "USER";
+        const sessionRole = session.user.role ?? "USER";
+        const canModerate =
+            sessionRole === "ADMIN" || (sessionRole === "MODERATOR" && targetRole === "USER");
 
         if (!isOwner && !canModerate) {
             return NextResponse.json(

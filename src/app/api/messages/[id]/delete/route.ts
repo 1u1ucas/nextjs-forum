@@ -20,6 +20,12 @@ export async function DELETE(
             where: { id },
             include: {
                 replies: true,
+                user: {
+                    select: {
+                        id: true,
+                        role: true,
+                    },
+                },
             },
         });
 
@@ -31,7 +37,10 @@ export async function DELETE(
         }
 
         const isOwner = message.userId === session.user.id;
-        const canModerate = ["ADMIN", "MODERATOR"].includes(session.user.role ?? "USER");
+        const targetRole = message.user?.role ?? "USER";
+        const sessionRole = session.user.role ?? "USER";
+        const canModerate =
+            sessionRole === "ADMIN" || (sessionRole === "MODERATOR" && targetRole === "USER");
 
         if (!isOwner && !canModerate) {
             return NextResponse.json(
