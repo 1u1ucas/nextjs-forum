@@ -240,7 +240,9 @@ async function main() {
             bio: "Administrateur du forum - Développeur passionné par les nouvelles technologies",
             karma: 1000,
             image: null,
-        },
+            role: "ADMIN",
+            emailVerified: new Date(),
+        } as any,
     });
     users.push(adminUser);
     console.log(`  ✓ Admin: ${adminUser.email}`);
@@ -256,7 +258,9 @@ async function main() {
                 bio: Math.random() > 0.5 ? faker.person.bio() : null,
                 karma: Math.floor(Math.random() * 500),
                 image: null,
-            },
+                role: Math.random() < 0.1 ? "MODERATOR" : "USER",
+                emailVerified: new Date(),
+            } as any,
         });
         users.push(user);
         if ((i + 1) % 5 === 0) {

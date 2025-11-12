@@ -86,9 +86,16 @@ export default function Header({ onCreateClick }: HeaderProps) {
                                         email={session.user?.email || undefined}
                                         size="sm"
                                     />
-                                    <span className="hidden sm:block font-medium text-sm dark:text-white">
-                                        {session.user?.name}
-                                    </span>
+                                    <div className="hidden sm:flex flex-col items-start">
+                                        <span className="font-medium text-sm dark:text-white">
+                                            {session.user?.name}
+                                        </span>
+                                        {session.user?.role && session.user.role !== "USER" && (
+                                            <span className="text-[10px] uppercase font-semibold text-orange-500">
+                                                {session.user.role}
+                                            </span>
+                                        )}
+                                    </div>
                                     <Menu className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                                 </button>
 
@@ -101,13 +108,13 @@ export default function Header({ onCreateClick }: HeaderProps) {
                                         <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-20">
                                             <button
                                                 onClick={() => {
-                                                    router.push("/profile");
+                                                    router.push(`/users/${session.user?.id}`);
                                                     setShowMenu(false);
                                                 }}
                                                 className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm dark:text-white"
                                             >
                                                 <User className="w-4 h-4" />
-                                                Mon profil
+                                                Profil public
                                             </button>
                                             <button
                                                 onClick={() => {

@@ -20,6 +20,8 @@ export default function LoginPage() {
             setInfo("Votre compte est créé ! Vérifiez votre boîte mail pour confirmer votre adresse avant de vous connecter.");
         } else if (searchParams.get("verified")) {
             setInfo("Votre email est confirmé. Vous pouvez à présent vous connecter.");
+        } else if (searchParams.get("reset")) {
+            setInfo("Votre mot de passe a été mis à jour. Vous pouvez vous connecter.");
         } else {
             setInfo("");
         }
@@ -165,6 +167,14 @@ export default function LoginPage() {
                             required
                             disabled={loading}
                         />
+                        <div className="text-right mt-2">
+                            <Link
+                                href="/auth/reset"
+                                className="text-xs text-orange-500 hover:text-orange-600 font-medium"
+                            >
+                                Mot de passe oublié ?
+                            </Link>
+                        </div>
                     </div>
 
                     <button

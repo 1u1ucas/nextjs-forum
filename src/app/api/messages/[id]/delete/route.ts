@@ -30,7 +30,10 @@ export async function DELETE(
             );
         }
 
-        if (message.userId !== session.user.id) {
+        const isOwner = message.userId === session.user.id;
+        const canModerate = ["ADMIN", "MODERATOR"].includes(session.user.role ?? "USER");
+
+        if (!isOwner && !canModerate) {
             return NextResponse.json(
                 { message: "Non autorisé" },
                 { status: 403 }

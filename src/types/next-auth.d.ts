@@ -4,6 +4,7 @@ declare module "next-auth" {
     interface Session {
         user: {
             id: string;
+            role: "USER" | "MODERATOR" | "ADMIN";
         } & DefaultSession["user"];
     }
 
@@ -12,6 +13,7 @@ declare module "next-auth" {
         email: string;
         name?: string | null;
         image?: string | null;
+        role: "USER" | "MODERATOR" | "ADMIN";
     }
 }
 
@@ -19,6 +21,7 @@ declare module "next-auth/jwt" {
     interface JWT {
         id: string;
         image?: string | null;
+        role?: "USER" | "MODERATOR" | "ADMIN";
     }
 }
 

@@ -57,11 +57,14 @@ export const { handlers: { GET, POST }, signIn, signOut, auth } = NextAuth({
                     throw new Error("EmailNotVerified");
                 }
 
+                const userRole = (user as { role?: "USER" | "MODERATOR" | "ADMIN" }).role ?? "USER";
+
                 return {
                     id: user.id,
                     email: user.email,
                     name: user.name,
                     image: user.image,
+                    role: userRole,
                 };
             },
         }),
@@ -84,9 +87,11 @@ export const { handlers: { GET, POST }, signIn, signOut, auth } = NextAuth({
         },
         async jwt({ token, user, trigger, session, account }) {
             if (user) {
+                const userRole = (user as { role?: "USER" | "MODERATOR" | "ADMIN" }).role ?? "USER";
                 token.id = user.id;
                 token.image = user.image;
                 token.name = user.name;
+                token.role = userRole;
             }
 
             if (account?.provider === "google") {
@@ -110,6 +115,11 @@ export const { handlers: { GET, POST }, signIn, signOut, auth } = NextAuth({
                 session.user.image = token.image as string | null;
                 if (token.name) {
                     session.user.name = token.name as string | null;
+                }
+                if (token.role) {
+                    session.user.role = token.role as "USER" | "MODERATOR" | "ADMIN";
+                } else {
+                    session.user.role = "USER";
                 }
             }
             return session;

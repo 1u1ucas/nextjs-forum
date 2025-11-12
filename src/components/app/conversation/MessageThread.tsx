@@ -35,6 +35,9 @@ export default function MessageThread({
     const [loading, setLoading] = useState(false);
 
     const isOwner = session?.user?.id === message.userId;
+    const canModerate =
+        session?.user?.role === "ADMIN" || session?.user?.role === "MODERATOR";
+    const canManage = isOwner || canModerate;
     const hasReplies = Array.isArray(message.replies) && message.replies.length > 0;
     const isHighlighted = highlightedMessageId === message.id;
     const maxDepth = 5;
@@ -179,7 +182,7 @@ export default function MessageThread({
                                 Répondre
                             </button>
                         )}
-                        {isOwner && !isEditing && (
+                        {canManage && !isEditing && (
                             <>
                                 <button
                                     onClick={() => setIsEditing(true)}

@@ -34,8 +34,13 @@ export async function DELETE(
             );
         }
 
-        if (conversation.userId !== session.user.id) {
-            console.log(`[DELETE CONVERSATION] Échec: Utilisateur ${session.user.id} n'est pas le propriétaire de la conversation ${id}`);
+        const isOwner = conversation.userId === session.user.id;
+        const canModerate = ["ADMIN", "MODERATOR"].includes(session.user.role ?? "USER");
+
+        if (!isOwner && !canModerate) {
+            console.log(
+                `[DELETE CONVERSATION] Échec: Utilisateur ${session.user.id} n'a pas les droits pour supprimer la conversation ${id}`
+            );
             return NextResponse.json(
                 { message: "Non autorisé" },
                 { status: 403 }
