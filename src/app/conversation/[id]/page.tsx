@@ -72,7 +72,7 @@ export default function ConversationDetailPage() {
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() || !conversation || addMessageMutation.isPending) return;
+        if (!session?.user?.id || !newMessage.trim() || !conversation || addMessageMutation.isPending) return;
         addMessageMutation.mutate({ content: newMessage });
     };
 
@@ -183,24 +183,51 @@ export default function ConversationDetailPage() {
 
                 {/* Add message form */}
                 <div className="mt-4 bg-white dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-700 p-4">
-                    <form onSubmit={handleSendMessage}>
-                        <MarkdownEditor
-                            value={newMessage}
-                            onChange={setNewMessage}
-                            placeholder="Ajouter un commentaire en Markdown..."
-                            rows={6}
-                        />
-                        <div className="flex justify-end mt-3">
-                            <button
-                                type="submit"
-                                disabled={addMessageMutation.isPending || !newMessage.trim()}
-                                className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded font-medium hover:bg-orange-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
-                            >
-                                <Send className="w-4 h-4" />
-                                {addMessageMutation.isPending ? "Envoi..." : "Commenter"}
-                            </button>
+                    {session?.user?.id ? (
+                        <form onSubmit={handleSendMessage}>
+                            <MarkdownEditor
+                                value={newMessage}
+                                onChange={setNewMessage}
+                                placeholder="Ajouter un commentaire en Markdown..."
+                                rows={6}
+                            />
+                            <div className="flex justify-end mt-3">
+                                <button
+                                    type="submit"
+                                    disabled={addMessageMutation.isPending || !newMessage.trim()}
+                                    className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded font-medium hover:bg-orange-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    <Send className="w-4 h-4" />
+                                    {addMessageMutation.isPending ? "Envoi..." : "Commenter"}
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                    Connectez-vous pour participer à la discussion
+                                </p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Créez un compte ou connectez-vous pour commenter cette conversation.
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => router.push("/auth/register")}
+                                    className="px-4 py-2 text-sm font-medium bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
+                                >
+                                    S'inscrire
+                                </button>
+                                <button
+                                    onClick={() => router.push("/auth/login")}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                    Se connecter
+                                </button>
+                            </div>
                         </div>
-                    </form>
+                    )}
                 </div>
             </div>
         </div>

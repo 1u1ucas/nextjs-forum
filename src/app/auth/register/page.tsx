@@ -24,8 +24,25 @@ export default function RegisterPage() {
             return;
         }
 
-        if (password.length < 6) {
-            setError("Le mot de passe doit contenir au moins 6 caractères");
+        const passwordErrors: string[] = [];
+        if (password.length < 8) {
+            passwordErrors.push("au moins 8 caractères");
+        }
+        if (!/[A-Z]/.test(password)) {
+            passwordErrors.push("une majuscule");
+        }
+        if (!/[a-z]/.test(password)) {
+            passwordErrors.push("une minuscule");
+        }
+        if (!/\d/.test(password)) {
+            passwordErrors.push("un chiffre");
+        }
+        if (!/[^A-Za-z0-9]/.test(password)) {
+            passwordErrors.push("un caractère spécial");
+        }
+
+        if (passwordErrors.length > 0) {
+            setError(`Le mot de passe doit contenir ${passwordErrors.join(", ")}.`);
             return;
         }
 

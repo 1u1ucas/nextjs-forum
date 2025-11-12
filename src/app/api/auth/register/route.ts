@@ -5,23 +5,48 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 
+import { z } from "zod";
+
+const registerSchema = z.object({
+    name: z
+        .string()
+        .trim()
+        .min(2, "Le nom doit contenir au moins 2 caractères")
+        .max(50, "Le nom doit contenir au maximum 50 caractères"),
+    email: z
+        .string()
+        .trim()
+        .email("Email invalide")
+        .max(255, "Email trop long"),
+    password: z
+        .string()
+        .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+        .max(128, "Le mot de passe est trop long")
+        .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
+        .regex(/[a-z]/, "Le mot de passe doit contenir au moins une minuscule")
+        .regex(/\d/, "Le mot de passe doit contenir au moins un chiffre")
+        .regex(
+            /[^A-Za-z0-9]/,
+            "Le mot de passe doit contenir au moins un caractère spécial"
+        ),
+});
+
 export async function POST(request: Request) {
     try {
-        const { name, email, password } = await request.json();
+        const json = await request.json();
+        const parsed = registerSchema.safeParse(json);
 
-        if (!name || !email || !password) {
+        if (!parsed.success) {
             return NextResponse.json(
-                { error: "Tous les champs sont requis" },
+                {
+                    error: "Données invalides",
+                    details: parsed.error.flatten(),
+                },
                 { status: 400 }
             );
         }
 
-        if (password.length < 6) {
-            return NextResponse.json(
-                { error: "Le mot de passe doit contenir au moins 6 caractères" },
-                { status: 400 }
-            );
-        }
+        const { name, email, password } = parsed.data;
 
         // Check if user already exists
         const existingUser = await prisma.user.findUnique({
