@@ -1,22 +1,13 @@
 "use client";
 
-import { Bell, Check, X } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useEffect, useState } from "react";
 import { notificationService } from "@/services/notification.service";
 import { useRouter } from "next/navigation";
-
-interface Notification {
-    id: string;
-    type: string;
-    title: string;
-    message: string;
-    link: string | null;
-    read: boolean;
-    createdAt: Date;
-}
+import { NotificationItem, NotificationType } from "@/types/notification.type";
 
 export default function NotificationBell() {
-    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -65,7 +56,7 @@ export default function NotificationBell() {
         }
     };
 
-    const getNotificationIcon = (type: string) => {
+    const getNotificationIcon = (type: NotificationType) => {
         switch (type) {
             case "reply":
                 return "💬";

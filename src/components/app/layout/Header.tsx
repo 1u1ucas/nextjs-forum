@@ -1,14 +1,15 @@
 "use client";
 
-import { Plus, User, LogOut, Menu, Bell, Bookmark } from "lucide-react";
+import { Plus, User, LogOut, Menu, Bookmark } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import CreateConversationModal from "@/components/app/conversation/CreateConversationModal";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import NotificationBell from "@/components/app/layout/NotificationBell";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import UserAvatar from "@/components/app/user/UserAvatar";
+import { ProfileResponse } from "@/types/profile.type";
 
 interface HeaderProps {
     onCreateClick?: () => void;
@@ -21,6 +22,21 @@ export default function Header({ onCreateClick }: HeaderProps) {
     const [showMenu, setShowMenu] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const { data: profileData } = useQuery<ProfileResponse>({
+        queryKey: ['userProfile'],
+        queryFn: async () => {
+            const response = await fetch("/api/user/profile");
+            if (!response.ok) throw new Error("Erreur lors du chargement du profil");
+            return response.json() as Promise<ProfileResponse>;
+        },
+        enabled: !!session?.user,
+        staleTime: 1000 * 60,
+    });
+
+    const avatarImage = useMemo(() => {
+        return profileData?.user?.image ?? session?.user?.image ?? null;
+    }, [profileData?.user?.image, session?.user?.image]);
+
     const handleSignOut = async () => {
         await signOut({ redirect: false });
         router.push("/");
@@ -28,7 +44,7 @@ export default function Header({ onCreateClick }: HeaderProps) {
     };
 
     return (
-        <header className="bg-white dark:bg-gray-900 border-b border-gray-300 dark:border-gray-700 sticky top-0 z-10">
+        <header className="bg-white dark:bg-gray-900 border-b border-gray-300 dark:border-gray-700 sticky top-0 z-12">
             <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push("/")}>
                     <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
@@ -65,7 +81,7 @@ export default function Header({ onCreateClick }: HeaderProps) {
                                     className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                 >
                                     <UserAvatar
-                                        image={session.user?.image}
+                                        image={avatarImage}
                                         name={session.user?.name || undefined}
                                         email={session.user?.email || undefined}
                                         size="sm"

@@ -1,34 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MessageCircle, ChevronDown, ChevronUp, Edit, Trash2, Reply } from "lucide-react";
 import MarkdownRenderer from "@/components/app/markdown/MarkdownRenderer";
 import UserAvatar from "@/components/app/user/UserAvatar";
 import MarkdownEditor from "@/components/app/markdown/MarkdownEditor";
 import { useSession } from "next-auth/react";
-
-interface Message {
-    id: string;
-    content: string;
-    createdAt: Date;
-    updatedAt: Date;
-    userId: string;
-    parentId: string | null;
-    votes: number;
-    user: {
-        id: string;
-        name: string | null;
-        email: string;
-    };
-    replies?: Message[];
-}
+import { ConversationMessageSummary } from "@/types/conversation.type";
 
 interface MessageThreadProps {
-    message: Message;
+    message: ConversationMessageSummary;
     depth?: number;
     onReply?: (parentId: string, content: string) => Promise<void>;
     onEdit?: (messageId: string, content: string) => Promise<void>;
     onDelete?: (messageId: string) => Promise<void>;
+    highlightedMessageId?: string | null;
 }
 
 export default function MessageThread({
@@ -37,6 +23,7 @@ export default function MessageThread({
     onReply,
     onEdit,
     onDelete,
+    highlightedMessageId,
 }: MessageThreadProps) {
     const { data: session } = useSession();
     const [isExpanded, setIsExpanded] = useState(true);
@@ -47,7 +34,8 @@ export default function MessageThread({
     const [loading, setLoading] = useState(false);
 
     const isOwner = session?.user?.id === message.userId;
-    const hasReplies = message.replies && message.replies.length > 0;
+    const hasReplies = Array.isArray(message.replies) && message.replies.length > 0;
+    const isHighlighted = highlightedMessageId === message.id;
     const maxDepth = 5;
 
     const handleReply = async () => {
@@ -103,14 +91,27 @@ export default function MessageThread({
 
     const indentClass = depth > 0 ? "ml-8 border-l-2 border-gray-200 dark:border-gray-700 pl-4" : "";
 
+    useEffect(() => {
+        if (!isHighlighted) return;
+        const element = document.getElementById(`message-${message.id}`);
+        if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [isHighlighted, message.id]);
+
     return (
-        <div className={`${indentClass} ${depth > 0 ? 'mt-3' : 'py-4'}`}>
+        <div
+            id={`message-${message.id}`}
+            className={`${indentClass} ${depth > 0 ? 'mt-3' : 'py-4'} ${
+                isHighlighted ? 'ring-2 ring-orange-400 ring-offset-2 ring-offset-white dark:ring-offset-gray-900 rounded-lg bg-orange-50/40 dark:bg-orange-900/20' : ''
+            }`}
+        >
             <div className="flex gap-3">
                 {/* Avatar */}
                 <UserAvatar
-                    image={message.user?.image}
-                    name={message.user.name}
-                    email={message.user.email}
+                    image={message.user?.image ?? null}
+                    name={message.user?.name ?? null}
+                    email={message.user?.email ?? ""}
                     size="sm"
                     className="shrink-0"
                 />
@@ -119,11 +120,12 @@ export default function MessageThread({
                     {/* Header */}
                     <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mb-2">
                         <span className="font-medium text-gray-900 dark:text-white">
-                            {message.user.name || "Utilisateur"}
+                            {message.user?.name || "Utilisateur"}
                         </span>
                         <span>•</span>
                         <span>{getTimeAgo(message.createdAt)}</span>
-                        {new Date(message.updatedAt).getTime() !== new Date(message.createdAt).getTime() && (
+                        {message.updatedAt &&
+                            new Date(message.updatedAt).getTime() !== new Date(message.createdAt).getTime() && (
                             <>
                                 <span>•</span>
                                 <span className="italic">modifié</span>
@@ -205,7 +207,7 @@ export default function MessageThread({
                                 ) : (
                                     <ChevronDown className="w-3 h-3" />
                                 )}
-                                {message.replies!.length} réponse{message.replies!.length > 1 ? "s" : ""}
+                                {message.replies?.length ?? 0} réponse{(message.replies?.length ?? 0) > 1 ? "s" : ""}
                             </button>
                         )}
                     </div>
@@ -246,7 +248,7 @@ export default function MessageThread({
             {/* Nested Replies */}
             {isExpanded && hasReplies && (
                 <div className="mt-2">
-                    {message.replies!.map((reply) => (
+                    {message.replies?.map((reply) => (
                         <MessageThread
                             key={reply.id}
                             message={reply}
@@ -254,6 +256,7 @@ export default function MessageThread({
                             onReply={onReply}
                             onEdit={onEdit}
                             onDelete={onDelete}
+                            highlightedMessageId={highlightedMessageId}
                         />
                     ))}
                 </div>

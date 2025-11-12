@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { conversationService } from "@/services/conversation.service";
 import { ConversationWithExtend } from "@/types/conversation.type";
 import { ArrowLeft, Send, MessageCircle, Trash2 } from "lucide-react";
@@ -13,13 +13,15 @@ import ImageCarousel from "@/components/app/conversation/ImageCarousel";
 
 export default function ConversationDetailPage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const router = useRouter();
     const queryClient = useQueryClient();
     const { data: session } = useSession();
     const [newMessage, setNewMessage] = useState("");
+    const focusId = searchParams.get("focus");
 
     // Query pour récupérer la conversation
-    const { data: conversation, isLoading } = useQuery({
+    const { data: conversation, isLoading } = useQuery<ConversationWithExtend>({
         queryKey: ['conversation', params.id],
         queryFn: () => conversationService.getConversation(params.id as string),
     });
@@ -111,6 +113,14 @@ export default function ConversationDetailPage() {
         addMessageMutation.mutate({ content: newMessage });
     };
 
+    useEffect(() => {
+        if (!conversation || !focusId) return;
+        const element = document.getElementById(`message-${focusId}`);
+        if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [conversation, focusId]);
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
@@ -188,6 +198,7 @@ export default function ConversationDetailPage() {
                             <MessageThread
                                 key={message.id}
                                 message={message}
+                                highlightedMessageId={focusId}
                                 onReply={async (parentId, content) => {
                                     await addMessageMutation.mutateAsync({ content, parentId });
                                 }}

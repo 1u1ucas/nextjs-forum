@@ -1,7 +1,6 @@
 "use client";
 
-import { Message } from "@/generated/prisma";
-import { ConversationWithExtend } from "@/types/conversation.type";
+import { ConversationMessageSummary, ConversationWithExtend } from "@/types/conversation.type";
 import { MessageCircle, Share2, Bookmark, ChevronUp, ChevronDown, Check, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { voteService } from "@/services/vote.service";
@@ -177,7 +176,7 @@ export default function ConversationCard({ conversation }: ConversationCardProps
                     {/* Preview or expanded content */}
                     {isExpanded && conversation.messages.length > 0 && (
                         <div className="mb-3 space-y-2">
-                            {conversation.messages.slice(0, 3).map((message: Message) => (
+                            {conversation.messages.slice(0, 3).map((message: ConversationMessageSummary) => (
                                 <div key={message.id} className="text-sm text-gray-700 dark:text-gray-300 pl-3 border-l-2 border-gray-300 dark:border-gray-600">
                                     {message.content}
                                 </div>

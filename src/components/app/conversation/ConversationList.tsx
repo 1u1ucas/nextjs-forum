@@ -2,7 +2,7 @@
 
 import { conversationService } from "@/services/conversation.service";
 import { useEffect, useRef, useState } from "react";
-import { ConversationWithExtend } from "@/types/conversation.type";
+import { ConversationList as ConversationListResponse, ConversationWithExtend } from "@/types/conversation.type";
 import ConversationCard from "./ConversationCard";
 import CreateConversationModal from "./CreateConversationModal";
 import { Loader2, TrendingUp, Clock, Flame, MessageSquare } from "lucide-react";
@@ -23,14 +23,11 @@ export default function ConversationList() {
         hasNextPage,
         isFetchingNextPage,
         isLoading,
-    } = useInfiniteQuery({
+    } = useInfiniteQuery<ConversationListResponse>({
         queryKey: ['conversations'],
         queryFn: ({ pageParam = 1 }) =>
-            conversationService.fetchConversations(pageParam, 10) as Promise<{
-                conversations: ConversationWithExtend[];
-                pagination: { page: number; totalPages: number };
-            }>,
-        getNextPageParam: (lastPage) => {
+            conversationService.fetchConversations(pageParam, 10),
+        getNextPageParam: (lastPage: ConversationListResponse) => {
             if (lastPage.pagination.page < lastPage.pagination.totalPages) {
                 return lastPage.pagination.page + 1;
             }

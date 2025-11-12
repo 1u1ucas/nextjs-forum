@@ -5,11 +5,17 @@ import { useState, useEffect } from "react";
 import { User, Lock, Palette, Save, Loader2 } from "lucide-react";
 import AvatarUpload from "@/components/app/user/AvatarUpload";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+    ProfileResponse,
+    ProfilePatchResponse,
+    PasswordPatchResponse,
+} from "@/types/profile.type";
 
 export default function AccountPage() {
     const { data: session, update } = useSession();
     const queryClient = useQueryClient();
-    const [loading, setLoading] = useState(false);
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [passwordLoading, setPasswordLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     
     // Profile form
@@ -22,12 +28,12 @@ export default function AccountPage() {
     const [confirmPassword, setConfirmPassword] = useState("");
 
     // Récupérer les statistiques du profil
-    const { data: profileData } = useQuery({
+    const { data: profileData } = useQuery<ProfileResponse>({
         queryKey: ['userProfile'],
         queryFn: async () => {
             const response = await fetch("/api/user/profile");
             if (!response.ok) throw new Error("Erreur lors du chargement");
-            return response.json();
+            return response.json() as Promise<ProfileResponse>;
         },
         enabled: !!session?.user,
     });
@@ -43,7 +49,7 @@ export default function AccountPage() {
 
     const handleProfileUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        setProfileLoading(true);
         setMessage(null);
 
         try {
@@ -55,13 +61,16 @@ export default function AccountPage() {
 
             if (!response.ok) throw new Error("Erreur lors de la mise à jour");
 
-            await update({ name });
+            const payload = (await response.json()) as ProfilePatchResponse;
+
+            await update({ name: payload.user?.name ?? name });
             queryClient.invalidateQueries({ queryKey: ['userProfile'] });
             setMessage({ type: 'success', text: 'Profil mis à jour avec succès !' });
-        } catch (error) {
+        } catch (error: unknown) {
+            console.error(error);
             setMessage({ type: 'error', text: 'Erreur lors de la mise à jour du profil' });
         } finally {
-            setLoading(false);
+            setProfileLoading(false);
         }
     };
 
@@ -72,7 +81,7 @@ export default function AccountPage() {
             return;
         }
 
-        setLoading(true);
+        setPasswordLoading(true);
         setMessage(null);
 
         try {
@@ -87,14 +96,17 @@ export default function AccountPage() {
                 throw new Error(data.message || "Erreur");
             }
 
-            setMessage({ type: 'success', text: 'Mot de passe changé avec succès !' });
+            const payload = (await response.json()) as PasswordPatchResponse;
+
+            setMessage({ type: 'success', text: payload.message ?? 'Mot de passe changé avec succès !' });
             setCurrentPassword("");
             setNewPassword("");
             setConfirmPassword("");
-        } catch (error: any) {
-            setMessage({ type: 'error', text: error.message });
+        } catch (error: unknown) {
+            console.error(error);
+            setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Erreur lors du changement de mot de passe' });
         } finally {
-            setLoading(false);
+            setPasswordLoading(false);
         }
     };
 
@@ -206,10 +218,10 @@ export default function AccountPage() {
                         <div className="flex justify-end">
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={profileLoading}
                                 className="flex items-center gap-2 px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
                             >
-                                {loading ? (
+                                {profileLoading ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
                                     <Save className="w-4 h-4" />
@@ -264,6 +276,7 @@ export default function AccountPage() {
                             </label>
                             <input
                                 type="password"
+                                value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
                                 placeholder="••••••••"
@@ -272,10 +285,10 @@ export default function AccountPage() {
                         <div className="flex justify-end">
                             <button
                                 type="submit"
-                                disabled={loading || !currentPassword || !newPassword || !confirmPassword}
+                                disabled={passwordLoading || !currentPassword || !newPassword || !confirmPassword}
                                 className="flex items-center gap-2 px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
                             >
-                                {loading ? (
+                                {passwordLoading ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
                                     <Lock className="w-4 h-4" />

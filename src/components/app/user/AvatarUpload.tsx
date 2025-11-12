@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import Image from "next/image";
 
@@ -17,6 +17,12 @@ export default function AvatarUpload({
 }: AvatarUploadProps) {
     const [uploading, setUploading] = useState(false);
     const [preview, setPreview] = useState<string | null>(currentAvatar || null);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setPreview(currentAvatar || null);
+        setError(null);
+    }, [currentAvatar]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -24,7 +30,7 @@ export default function AvatarUpload({
 
         // Vérifier la taille (max 2MB pour les avatars)
         if (file.size > 2 * 1024 * 1024) {
-            alert("Le fichier est trop volumineux. Taille max : 2MB");
+            setError("Le fichier est trop volumineux. Taille max : 2MB.");
             return;
         }
 
@@ -38,6 +44,7 @@ export default function AvatarUpload({
         // Upload
         setUploading(true);
         try {
+            setError(null);
             const formData = new FormData();
             formData.append("file", file);
 
@@ -62,9 +69,9 @@ export default function AvatarUpload({
 
             setPreview(url);
             onUploadComplete?.(url);
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Erreur:", error);
-            alert("Erreur lors de l'upload de l'avatar");
+            setError("Erreur lors de l'upload de l'avatar. Veuillez réessayer.");
             setPreview(currentAvatar || null);
             onUploadComplete?.(currentAvatar || null);
         } finally {
@@ -82,37 +89,45 @@ export default function AvatarUpload({
         : "U";
 
     return (
-        <div className="relative w-32 h-32 group">
-            {preview ? (
-                <div className="relative w-full h-full rounded-full overflow-hidden">
-                    <Image
-                        src={preview}
-                        alt="Avatar"
-                        fill
-                        className="object-cover"
-                    />
-                </div>
-            ) : (
-                <div className="w-full h-full rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-                    <span className="text-white font-bold text-4xl">{initials}</span>
-                </div>
-            )}
-
-            {/* Overlay pour l'upload */}
-            <label className="absolute inset-0 rounded-full bg-opacity-0 group-hover:bg-opacity-50 flex items-center justify-center cursor-pointer transition-all">
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    disabled={uploading}
-                    className="hidden"
-                />
-                {uploading ? (
-                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+        <div className="flex flex-col items-center">
+            <div className="relative w-32 h-32 group">
+                {preview ? (
+                    <div className="relative w-full h-full rounded-full overflow-hidden">
+                        <Image
+                            src={preview}
+                            alt="Avatar"
+                            fill
+                            className="object-cover"
+                        />
+                    </div>
                 ) : (
-                    <Camera className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="w-full h-full rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+                        <span className="text-white font-bold text-4xl">{initials}</span>
+                    </div>
                 )}
-            </label>
+
+                {/* Overlay pour l'upload */}
+                <label className="absolute inset-0 rounded-full bg-opacity-0 group-hover:bg-opacity-50 flex items-center justify-center cursor-pointer transition-all">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        disabled={uploading}
+                        className="hidden"
+                    />
+                    {uploading ? (
+                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                    ) : (
+                        <Camera className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                </label>
+            </div>
+
+            {error && (
+                <p className="mt-2 text-sm text-red-500 text-center" role="alert">
+                    {error}
+                </p>
+            )}
         </div>
     );
 }

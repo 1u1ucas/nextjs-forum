@@ -1,4 +1,22 @@
-async function fetchConversations(page?: number, limit?: number) {
+import {
+    ConversationList,
+    ConversationMessageSummary,
+    ConversationWithExtend,
+} from "@/types/conversation.type";
+import { Pagination } from "@/types/pagination.type";
+import {
+    ConversationDto,
+    ConversationMessageDto,
+    normalizeConversation,
+    normalizeMessage,
+} from "@/utils/conversation-normalizer";
+
+type ConversationListDto = {
+    conversations: ConversationDto[];
+    pagination: Pagination;
+};
+
+async function fetchConversations(page?: number, limit?: number): Promise<ConversationList> {
     const params = new URLSearchParams();
     if (page) params.set("page", String(page));
     if (limit) params.set("limit", String(limit));
@@ -7,10 +25,14 @@ async function fetchConversations(page?: number, limit?: number) {
     if (!response.ok) {
         throw new Error("Failed to fetch conversations");
     }
-    return response.json();
+    const data = (await response.json()) as ConversationListDto;
+    return {
+        conversations: data.conversations.map(normalizeConversation),
+        pagination: data.pagination,
+    };
 }
 
-async function createConversation(title: string, content: string, images: string[] = []) {
+async function createConversation(title: string, content: string, images: string[] = []): Promise<ConversationWithExtend> {
     const response = await fetch("/api/conversations/create", {
         method: "POST",
         headers: {
@@ -23,18 +45,20 @@ async function createConversation(title: string, content: string, images: string
         throw new Error("Erreur lors de la création");
     }
 
-    return response.json();
+    const data = (await response.json()) as ConversationDto;
+    return normalizeConversation(data);
 }
 
-async function getConversation(id: string) {
+async function getConversation(id: string): Promise<ConversationWithExtend> {
     const response = await fetch(`/api/conversations/${id}`);
     if (!response.ok) {
         throw new Error("Failed to fetch conversation");
     }
-    return response.json();
+    const data = (await response.json()) as ConversationDto;
+    return normalizeConversation(data);
 }
 
-async function addMessage(conversationId: string, content: string, parentId?: string) {
+async function addMessage(conversationId: string, content: string, parentId?: string): Promise<ConversationMessageSummary> {
     const response = await fetch(`/api/conversations/${conversationId}/messages`, {
         method: "POST",
         headers: {
@@ -47,10 +71,11 @@ async function addMessage(conversationId: string, content: string, parentId?: st
         throw new Error("Erreur lors de l'ajout du message");
     }
 
-    return response.json();
+    const data = (await response.json()) as ConversationMessageDto;
+    return normalizeMessage(data);
 }
 
-async function deleteConversation(id: string) {
+async function deleteConversation(id: string): Promise<{ message: string }> {
     const response = await fetch(`/api/conversations/${id}/delete`, {
         method: "DELETE",
     });
@@ -59,7 +84,7 @@ async function deleteConversation(id: string) {
         throw new Error("Erreur lors de la suppression");
     }
 
-    return response.json();
+    return response.json() as Promise<{ message: string }>;
 }
 
 export const conversationService = {
