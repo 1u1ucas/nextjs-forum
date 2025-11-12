@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -50,7 +51,7 @@ export default function RegisterPage() {
                 return;
             }
 
-            router.push("/auth/login?registered=true");
+            router.push("/auth/login?check-email=1");
         } catch (err) {
             setError("Une erreur est survenue");
         } finally {
@@ -77,6 +78,38 @@ export default function RegisterPage() {
                         <span className="text-sm">{error}</span>
                     </div>
                 )}
+
+                {/* Social */}
+                <div className="space-y-3">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setLoading(true);
+                            void signIn("google", { callbackUrl: "/" });
+                        }}
+                        className="w-full flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 py-2 rounded-lg font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+                        ) : (
+                            <>
+                                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                    <path fill="#EA4335" d="M12 10.2v3.6h5.1c-.2 1.1-.8 2.1-1.8 2.7v2.2h2.9c1.7-1.6 2.8-4 2.8-6.9 0-.7-.1-1.4-.2-2H12z" />
+                                    <path fill="#34A853" d="M6.6 14.3l-.9.7-2.3 1.8C4.5 19.7 8 22 12 22c2.7 0 5-.9 6.6-2.4l-2.9-2.2c-.8.5-1.9.9-3.7.9-2.8 0-5.1-1.8-5.9-4.3z" />
+                                    <path fill="#4A90E2" d="M3.4 6.2L1 8c-1 1.9-1 4.2-1 4.2s0 2.3 1 4.2l2.4-1.8c-.2-.5-.3-1.1-.3-1.7s.1-1.2.3-1.7z" />
+                                    <path fill="#FBBC05" d="M12 4.6c1.5 0 2.5.7 3 1.2l2.3-2.3C16.9 2 14.7 1 12 1 8 1 4.5 3.3 2.8 7l2.4 1.8c.7-2.5 3.1-4.2 5.8-4.2z" />
+                                </svg>
+                                Continuer avec Google
+                            </>
+                        )}
+                    </button>
+                    <div className="flex items-center gap-3">
+                        <span className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                        <span className="text-xs uppercase text-gray-400 dark:text-gray-500">ou</span>
+                        <span className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                    </div>
+                </div>
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">

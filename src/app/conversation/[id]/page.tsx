@@ -192,7 +192,7 @@ export default function ConversationDetailPage() {
                 </div>
 
                 {/* Messages */}
-                <div className="bg-white dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-700">
+                <div className="bg-white dark:bg-gray-800 px-2 rounded border border-gray-300 dark:border-gray-700">
                     {conversation.messages && conversation.messages.length > 0 ? (
                         buildMessageTree(conversation.messages).map((message: any) => (
                             <MessageThread

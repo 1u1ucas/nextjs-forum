@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import { resend, DEFAULT_FROM_EMAIL } from "@/lib/email";
+import ConfirmEmail from "@/emails/ConfirmEmail";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 
 export async function POST(request: Request) {
     try {
@@ -44,6 +47,39 @@ export async function POST(request: Request) {
             },
         });
 
+        const token = randomUUID();
+        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        await prisma.verificationToken.create({
+            data: {
+                identifier: email,
+                token,
+                expires,
+            },
+        });
+
+        const appUrl =
+            process.env.NEXT_PUBLIC_APP_URL ??
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+        const confirmationUrl = `${appUrl}/auth/verify?token=${token}`;
+
+        if (process.env.RESEND_API_KEY) {
+            await resend.emails.send({
+                from: DEFAULT_FROM_EMAIL,
+                to: email,
+                subject: "Confirmez votre email",
+                react: ConfirmEmail({
+                    name,
+                    confirmationUrl,
+                }),
+            });
+        } else {
+            console.warn(
+                `RESEND_API_KEY non configuré, aucun email de confirmation envoyé pour ${email}`,
+            );
+        }
+
         return NextResponse.json(
             {
                 user: {
@@ -51,6 +87,7 @@ export async function POST(request: Request) {
                     name: user.name,
                     email: user.email,
                 },
+                message: "Inscription réussie. Vérifiez votre email pour confirmer votre compte.",
             },
             { status: 201 }
         );
