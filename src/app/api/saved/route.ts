@@ -2,14 +2,30 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
     const session = await auth();
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const conversationId = searchParams.get("conversationId");
+
+    if (conversationId) {
+        const saved = await prisma.savedConversation.findUnique({
+            where: {
+                userId_conversationId: {
+                    userId: session.user.id,
+                    conversationId,
+                },
+            },
+        });
+
+        return NextResponse.json({ saved: Boolean(saved) });
+    }
+
     const saved = await prisma.savedConversation.findMany({
-        where: { 
+        where: {
             userId: session.user.id,
         },
         include: {
@@ -44,7 +60,7 @@ export async function GET() {
     });
 
     // Filtrer les conversations supprimées côté serveur
-    const filtered = saved.filter(item => item.conversation && !item.conversation.deletedAt);
+    const filtered = saved.filter((item) => item.conversation && !item.conversation.deletedAt);
 
     return NextResponse.json(filtered);
 }

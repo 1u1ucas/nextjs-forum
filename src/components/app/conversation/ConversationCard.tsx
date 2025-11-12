@@ -2,35 +2,59 @@
 
 import { ConversationMessageSummary, ConversationWithExtend } from "@/types/conversation.type";
 import { MessageCircle, Share2, Bookmark, ChevronUp, ChevronDown, Check, Trash2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { voteService } from "@/services/vote.service";
 import { useRouter } from "next/navigation";
 import { savedService } from "@/services/saved.service";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { conversationService } from "@/services/conversation.service";
 import { useSession } from "next-auth/react";
 import ImageCarousel from "./ImageCarousel";
 
 interface ConversationCardProps {
     conversation: ConversationWithExtend;
+    initialIsSaved?: boolean;
+    onSavedChange?: (saved: boolean) => void;
 }
 
-export default function ConversationCard({ conversation }: ConversationCardProps) {
+export default function ConversationCard({
+    conversation,
+    initialIsSaved,
+    onSavedChange,
+}: ConversationCardProps) {
     const router = useRouter();
     const queryClient = useQueryClient();
     const { data: session } = useSession();
     const [votes, setVotes] = useState(conversation.votes || 0);
-    const [voteStatus, setVoteStatus] = useState<'up' | 'down' | null>(null);
+    const [voteStatus, setVoteStatus] = useState<"up" | "down" | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
     const [showCopied, setShowCopied] = useState(false);
 
     const isOwner = session?.user?.id === conversation.userId;
 
-    useEffect(() => {
-        const saved = localStorage.getItem(`saved_${conversation.id}`);
-        setIsSaved(saved === 'true');
-    }, [conversation.id]);
+    const shouldFetchSavedStatus = Boolean(session?.user?.id) && initialIsSaved === undefined;
+
+    const { data: isSaved = initialIsSaved ?? false } = useQuery({
+        queryKey: ["saved", conversation.id],
+        queryFn: () => savedService.isSaved(conversation.id),
+        enabled: shouldFetchSavedStatus,
+        initialData: initialIsSaved,
+    });
+
+    const conversationImages = useMemo(() => {
+        if (!conversation.imageUrl) return null;
+
+        try {
+            const parsed = JSON.parse(conversation.imageUrl);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return parsed as string[];
+            }
+        } catch {
+            // noop
+        }
+
+        return [conversation.imageUrl];
+    }, [conversation.imageUrl]);
 
     const handleVote = async (type: 'up' | 'down') => {
         const previousVotes = votes;
@@ -79,24 +103,38 @@ export default function ConversationCard({ conversation }: ConversationCardProps
         }
     };
 
-    const handleSave = async () => {
-        try {
-            const newSavedState = !isSaved;
-            setIsSaved(newSavedState);
-            if (newSavedState) {
+    const toggleSavedMutation = useMutation({
+        mutationFn: async (nextState: boolean) => {
+            if (nextState) {
                 await savedService.save(conversation.id);
             } else {
                 await savedService.unsave(conversation.id);
             }
-            localStorage.setItem(`saved_${conversation.id}`, String(newSavedState));
-        } catch (e) {
-            // rollback local state if server fails
-            setIsSaved((prev) => {
-                const reverted = !prev;
-                localStorage.setItem(`saved_${conversation.id}`, String(reverted));
-                return reverted;
-            });
+        },
+        onMutate: async (nextState) => {
+            await queryClient.cancelQueries({ queryKey: ["saved", conversation.id] });
+            const previous = queryClient.getQueryData<boolean>(["saved", conversation.id]);
+            queryClient.setQueryData(["saved", conversation.id], nextState);
+            return { previous };
+        },
+        onError: (_error, _nextState, context) => {
+            if (context?.previous !== undefined) {
+                queryClient.setQueryData(["saved", conversation.id], context.previous);
+            }
+        },
+        onSuccess: (_data, nextState) => {
+            onSavedChange?.(nextState);
+        },
+    });
+
+    const handleSave = () => {
+        if (!session?.user?.id) {
+            router.push("/auth/login");
+            return;
         }
+
+        const nextState = !isSaved;
+        toggleSavedMutation.mutate(nextState);
     };
 
     const handleViewDetails = () => {
@@ -156,20 +194,9 @@ export default function ConversationCard({ conversation }: ConversationCardProps
                     </h2>
 
                     {/* Images */}
-                    {conversation.imageUrl && (
+                    {conversationImages && (
                         <div className="mb-3">
-                            {(() => {
-                                try {
-                                    const imageArray = JSON.parse(conversation.imageUrl);
-                                    if (Array.isArray(imageArray) && imageArray.length > 0) {
-                                        return <ImageCarousel images={imageArray} alt={conversation.title || "Image"} />;
-                                    }
-                                } catch (e) {
-                                    // Si ce n'est pas un JSON array, traiter comme une image unique
-                                    return <ImageCarousel images={[conversation.imageUrl]} alt={conversation.title || "Image"} />;
-                                }
-                                return null;
-                            })()}
+                            <ImageCarousel images={conversationImages} alt={conversation.title || "Image"} />
                         </div>
                     )}
 
@@ -207,9 +234,10 @@ export default function ConversationCard({ conversation }: ConversationCardProps
                         </button>
                         <button 
                             onClick={handleSave}
+                            disabled={toggleSavedMutation.isPending}
                             className={`flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 ${isSaved ? 'text-orange-500' : ''}`}
                         >
-                            <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+                            <Bookmark className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
                             <span>{isSaved ? "Sauvegardé" : "Sauvegarder"}</span>
                         </button>
                         {isOwner && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { conversationService } from "@/services/conversation.service";
 import { ConversationWithExtend } from "@/types/conversation.type";
@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import MessageThread from "@/components/app/conversation/MessageThread";
 import { useSession } from "next-auth/react";
 import ImageCarousel from "@/components/app/conversation/ImageCarousel";
+import { buildMessageTree } from "@/lib/message-utils";
 
 export default function ConversationDetailPage() {
     const params = useParams();
@@ -81,32 +82,6 @@ export default function ConversationDetailPage() {
         deleteConversationMutation.mutate();
     };
 
-    // Fonction pour construire l'arbre hiérarchique des messages
-    const buildMessageTree = (messages: any[]) => {
-        const messageMap = new Map();
-        const rootMessages: any[] = [];
-
-        // Créer un map de tous les messages
-        messages.forEach(msg => {
-            messageMap.set(msg.id, { ...msg, replies: [] });
-        });
-
-        // Organiser les messages en arbre
-        messages.forEach(msg => {
-            const message = messageMap.get(msg.id);
-            if (!msg.parentId) {
-                rootMessages.push(message);
-            } else {
-                const parent = messageMap.get(msg.parentId);
-                if (parent) {
-                    parent.replies.push(message);
-                }
-            }
-        });
-
-        return rootMessages;
-    };
-
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim() || !conversation || addMessageMutation.isPending) return;
@@ -120,6 +95,28 @@ export default function ConversationDetailPage() {
             element.scrollIntoView({ behavior: "smooth", block: "center" });
         }
     }, [conversation, focusId]);
+
+    const conversationMessages = conversation?.messages ?? [];
+    const messageTree = useMemo(
+        () => buildMessageTree(conversationMessages),
+        [conversationMessages]
+    );
+
+    const conversationImageUrl = conversation?.imageUrl ?? null;
+    const conversationImages = useMemo(() => {
+        if (!conversationImageUrl) return null;
+
+        try {
+            const parsed = JSON.parse(conversationImageUrl);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return parsed;
+            }
+        } catch (error) {
+            // noop: fallback to single image
+        }
+
+        return [conversationImageUrl];
+    }, [conversationImageUrl]);
 
     if (isLoading) {
         return (
@@ -170,20 +167,12 @@ export default function ConversationDetailPage() {
             <div className="max-w-4xl mx-auto px-4 py-5">
                 {/* Images with Title */}
                 <div className="mb-4 bg-white dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-700 p-4">
-                    {conversation.imageUrl ? (
+                    {conversationImages ? (
                         <>
-                            {(() => {
-                                try {
-                                    const imageArray = JSON.parse(conversation.imageUrl);
-                                    if (Array.isArray(imageArray) && imageArray.length > 0) {
-                                        return <ImageCarousel images={imageArray} alt={conversation.title || "Image"} />;
-                                    }
-                                } catch (e) {
-                                    // Si ce n'est pas un JSON array, traiter comme une image unique
-                                    return <ImageCarousel images={[conversation.imageUrl]} alt={conversation.title || "Image"} />;
-                                }
-                                return null;
-                            })()}
+                            <ImageCarousel
+                                images={conversationImages}
+                                alt={conversation.title || "Image"}
+                            />
                             <h1 className="text-2xl font-bold dark:text-white mt-4">{conversation.title}</h1>
                         </>
                     ) : (
@@ -193,8 +182,8 @@ export default function ConversationDetailPage() {
 
                 {/* Messages */}
                 <div className="bg-white dark:bg-gray-800 px-2 rounded border border-gray-300 dark:border-gray-700">
-                    {conversation.messages && conversation.messages.length > 0 ? (
-                        buildMessageTree(conversation.messages).map((message: any) => (
+                    {messageTree.length > 0 ? (
+                        messageTree.map((message) => (
                             <MessageThread
                                 key={message.id}
                                 message={message}

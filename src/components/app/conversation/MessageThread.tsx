@@ -7,9 +7,10 @@ import UserAvatar from "@/components/app/user/UserAvatar";
 import MarkdownEditor from "@/components/app/markdown/MarkdownEditor";
 import { useSession } from "next-auth/react";
 import { ConversationMessageSummary } from "@/types/conversation.type";
+import { MessageTreeNode } from "@/lib/message-utils";
 
 interface MessageThreadProps {
-    message: ConversationMessageSummary;
+    message: MessageTreeNode<ConversationMessageSummary>;
     depth?: number;
     onReply?: (parentId: string, content: string) => Promise<void>;
     onEdit?: (messageId: string, content: string) => Promise<void>;

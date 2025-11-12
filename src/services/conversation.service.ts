@@ -10,6 +10,7 @@ import {
     normalizeConversation,
     normalizeMessage,
 } from "@/utils/conversation-normalizer";
+import { apiFetch } from "@/lib/api";
 
 type ConversationListDto = {
     conversations: ConversationDto[];
@@ -21,11 +22,7 @@ async function fetchConversations(page?: number, limit?: number): Promise<Conver
     if (page) params.set("page", String(page));
     if (limit) params.set("limit", String(limit));
     const qs = params.toString();
-    const response = await fetch(`/api/conversations${qs ? `?${qs}` : ""}`);
-    if (!response.ok) {
-        throw new Error("Failed to fetch conversations");
-    }
-    const data = (await response.json()) as ConversationListDto;
+    const data = await apiFetch<ConversationListDto>(`/api/conversations${qs ? `?${qs}` : ""}`);
     return {
         conversations: data.conversations.map(normalizeConversation),
         pagination: data.pagination,
@@ -33,7 +30,7 @@ async function fetchConversations(page?: number, limit?: number): Promise<Conver
 }
 
 async function createConversation(title: string, content: string, images: string[] = []): Promise<ConversationWithExtend> {
-    const response = await fetch("/api/conversations/create", {
+    const data = await apiFetch<ConversationDto>("/api/conversations/create", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -41,50 +38,29 @@ async function createConversation(title: string, content: string, images: string
         body: JSON.stringify({ title, content, images }),
     });
 
-    if (!response.ok) {
-        throw new Error("Erreur lors de la création");
-    }
-
-    const data = (await response.json()) as ConversationDto;
     return normalizeConversation(data);
 }
 
 async function getConversation(id: string): Promise<ConversationWithExtend> {
-    const response = await fetch(`/api/conversations/${id}`);
-    if (!response.ok) {
-        throw new Error("Failed to fetch conversation");
-    }
-    const data = (await response.json()) as ConversationDto;
+    const data = await apiFetch<ConversationDto>(`/api/conversations/${id}`);
     return normalizeConversation(data);
 }
 
 async function addMessage(conversationId: string, content: string, parentId?: string): Promise<ConversationMessageSummary> {
-    const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+    const data = await apiFetch<ConversationMessageDto>(`/api/conversations/${conversationId}/messages`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
         body: JSON.stringify({ content, parentId }),
     });
-
-    if (!response.ok) {
-        throw new Error("Erreur lors de l'ajout du message");
-    }
-
-    const data = (await response.json()) as ConversationMessageDto;
     return normalizeMessage(data);
 }
 
 async function deleteConversation(id: string): Promise<{ message: string }> {
-    const response = await fetch(`/api/conversations/${id}/delete`, {
+    return apiFetch<{ message: string }>(`/api/conversations/${id}/delete`, {
         method: "DELETE",
     });
-
-    if (!response.ok) {
-        throw new Error("Erreur lors de la suppression");
-    }
-
-    return response.json() as Promise<{ message: string }>;
 }
 
 export const conversationService = {

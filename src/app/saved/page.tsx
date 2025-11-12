@@ -53,7 +53,20 @@ export default function SavedPage() {
                     <div className="space-y-2.5">
                         {items.length > 0 ? (
                             items.map((it) => (
-                                <ConversationCard key={it.conversation.id} conversation={it.conversation} />
+                                <ConversationCard
+                                    key={it.conversation.id}
+                                    conversation={it.conversation}
+                                    initialIsSaved
+                                    onSavedChange={(saved) => {
+                                        if (!saved) {
+                                            setItems((prev) =>
+                                                prev.filter(
+                                                    (item) => item.conversation.id !== it.conversation.id
+                                                )
+                                            );
+                                        }
+                                    }}
+                                />
                             ))
                         ) : (
                             <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-700 p-12 text-center">

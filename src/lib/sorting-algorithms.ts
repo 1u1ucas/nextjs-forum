@@ -1,18 +1,23 @@
 import { ConversationWithExtend } from "@/types/conversation.type";
 
+const SCORE_DECAY_OFFSET = 2;
+const SCORE_DECAY_EXPONENT = 1.5;
+const HOURS_IN_MS = 1000 * 60 * 60;
+
 /**
  * Algorithme Hot inspiré de Reddit
  * Prend en compte les votes et le temps
  */
-export function calculateHotScore(conversation: ConversationWithExtend): number {
-    const votes = conversation.votes || 0;
-    const now = new Date().getTime();
+export function calculateHotScore(
+    conversation: ConversationWithExtend,
+    referenceTimestamp: number = Date.now()
+): number {
+    const votes = conversation.votes ?? 0;
     const created = new Date(conversation.createdAt).getTime();
-    const ageInHours = (now - created) / (1000 * 60 * 60);
-    
+    const ageInHours = Math.max((referenceTimestamp - created) / HOURS_IN_MS, 0);
+
     // Score basé sur les votes avec décroissance temporelle
-    const score = votes / Math.pow(ageInHours + 2, 1.5);
-    return score;
+    return votes / Math.pow(ageInHours + SCORE_DECAY_OFFSET, SCORE_DECAY_EXPONENT);
 }
 
 /**
@@ -72,8 +77,13 @@ export function sortConversations(
     }
     
     switch (sortBy) {
-        case "hot":
-            return filtered.sort((a, b) => calculateHotScore(b) - calculateHotScore(a));
+        case "hot": {
+            const referenceTimestamp = Date.now();
+            return filtered.sort(
+                (a, b) =>
+                    calculateHotScore(b, referenceTimestamp) - calculateHotScore(a, referenceTimestamp)
+            );
+        }
         
         case "top":
             return filtered.sort((a, b) => (b.votes || 0) - (a.votes || 0));
