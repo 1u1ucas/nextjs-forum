@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 interface UserAvatarProps {
     image?: string | null;
@@ -8,6 +9,7 @@ interface UserAvatarProps {
     email?: string | null;
     size?: "sm" | "md" | "lg";
     className?: string;
+    href?: string;
 }
 
 export default function UserAvatar({
@@ -16,6 +18,7 @@ export default function UserAvatar({
     email,
     size = "md",
     className = "",
+    href,
 }: UserAvatarProps) {
     const initials = name
         ? name
@@ -32,8 +35,8 @@ export default function UserAvatar({
         lg: "w-12 h-12 text-lg",
     };
 
-    return (
-        <div className={`${sizeClasses[size]} rounded-full overflow-hidden ${className}`}>
+    const content = (
+        <div className={`${sizeClasses[size]} rounded-full overflow-hidden`}>
             {image ? (
                 <Image
                     src={image}
@@ -41,14 +44,24 @@ export default function UserAvatar({
                     width={size === "sm" ? 32 : size === "md" ? 40 : 48}
                     height={size === "sm" ? 32 : size === "md" ? 40 : 48}
                     className="w-full h-full object-cover"
-                    unoptimized={image.startsWith('/')} // Désactiver l'optimisation pour les images locales
+                    unoptimized={image.startsWith("/")}
                 />
             ) : (
-                <div className="w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+                <div className="w-full h-full bg-linear-to-br from-orange-400 to-orange-600 flex items-center justify-center">
                     <span className="text-white font-bold">{initials}</span>
                 </div>
             )}
         </div>
     );
+
+    if (href) {
+        return (
+            <Link href={href} className={`inline-block ${className}`}>
+                {content}
+            </Link>
+        );
+    }
+
+    return <div className={className}>{content}</div>;
 }
 

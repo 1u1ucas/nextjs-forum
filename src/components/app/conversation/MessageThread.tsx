@@ -7,6 +7,7 @@ import UserAvatar from "@/components/app/user/UserAvatar";
 import MarkdownEditor from "@/components/app/markdown/MarkdownEditor";
 import { useSession } from "next-auth/react";
 import { ConversationMessageSummary } from "@/types/conversation.type";
+import Link from "next/link";
 import { MessageTreeNode } from "@/lib/message-utils";
 
 interface MessageThreadProps {
@@ -41,6 +42,11 @@ export default function MessageThread({
     const hasReplies = Array.isArray(message.replies) && message.replies.length > 0;
     const isHighlighted = highlightedMessageId === message.id;
     const maxDepth = 5;
+
+    const profileHref =
+        message.user?.id ?? message.userId
+            ? `/users/${message.user?.id ?? message.userId}`
+            : null;
 
     const handleReply = async () => {
         if (!replyContent.trim() || !onReply) return;
@@ -118,14 +124,24 @@ export default function MessageThread({
                     email={message.user?.email ?? ""}
                     size="sm"
                     className="shrink-0"
+                    href={profileHref ?? undefined}
                 />
 
                 <div className="flex-1 min-w-0">
                     {/* Header */}
                     <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 mb-2">
-                        <span className="font-medium text-gray-900 dark:text-white">
-                            {message.user?.name || "Utilisateur"}
-                        </span>
+                        {profileHref ? (
+                            <Link
+                                href={profileHref}
+                                className="font-medium text-gray-900 dark:text-white hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+                            >
+                                {message.user?.name || "Utilisateur"}
+                            </Link>
+                        ) : (
+                            <span className="font-medium text-gray-900 dark:text-white">
+                                {message.user?.name || "Utilisateur"}
+                            </span>
+                        )}
                         <span>•</span>
                         <span>{getTimeAgo(message.createdAt)}</span>
                         {message.updatedAt &&
