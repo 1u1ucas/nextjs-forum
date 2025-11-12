@@ -2,7 +2,7 @@
 
 import { ConversationMessageSummary, ConversationWithExtend } from "@/types/conversation.type";
 import { MessageCircle, Share2, Bookmark, ChevronUp, ChevronDown, Check, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { voteService } from "@/services/vote.service";
 import { useRouter } from "next/navigation";
 import { savedService } from "@/services/saved.service";
@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { conversationService } from "@/services/conversation.service";
 import { useSession } from "next-auth/react";
 import ImageCarousel from "./ImageCarousel";
+import { ApiError } from "@/lib/api";
 
 interface ConversationCardProps {
     conversation: ConversationWithExtend;
@@ -29,6 +30,7 @@ export default function ConversationCard({
     const [voteStatus, setVoteStatus] = useState<"up" | "down" | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [showCopied, setShowCopied] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     const isOwner = session?.user?.id === conversation.userId;
 
@@ -41,20 +43,7 @@ export default function ConversationCard({
         initialData: initialIsSaved,
     });
 
-    const conversationImages = useMemo(() => {
-        if (!conversation.imageUrl) return null;
-
-        try {
-            const parsed = JSON.parse(conversation.imageUrl);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                return parsed as string[];
-            }
-        } catch {
-            // noop
-        }
-
-        return [conversation.imageUrl];
-    }, [conversation.imageUrl]);
+    const conversationImages = conversation.images ?? [];
 
     const handleVote = async (type: 'up' | 'down') => {
         const previousVotes = votes;
@@ -115,14 +104,24 @@ export default function ConversationCard({
             await queryClient.cancelQueries({ queryKey: ["saved", conversation.id] });
             const previous = queryClient.getQueryData<boolean>(["saved", conversation.id]);
             queryClient.setQueryData(["saved", conversation.id], nextState);
+            setSaveError(null);
             return { previous };
         },
-        onError: (_error, _nextState, context) => {
+        onError: (error, _nextState, context) => {
             if (context?.previous !== undefined) {
                 queryClient.setQueryData(["saved", conversation.id], context.previous);
             }
+            if (error instanceof ApiError) {
+                setSaveError(error.message);
+                if (error.status === 401) {
+                    router.push("/auth/login");
+                }
+            } else {
+                setSaveError("Erreur lors de la mise à jour du favori.");
+            }
         },
         onSuccess: (_data, nextState) => {
+            setSaveError(null);
             onSavedChange?.(nextState);
         },
     });
@@ -194,7 +193,7 @@ export default function ConversationCard({
                     </h2>
 
                     {/* Images */}
-                    {conversationImages && (
+                    {conversationImages.length > 0 && (
                         <div className="mb-3">
                             <ImageCarousel images={conversationImages} alt={conversation.title || "Image"} />
                         </div>
@@ -240,6 +239,9 @@ export default function ConversationCard({
                             <Bookmark className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
                             <span>{isSaved ? "Sauvegardé" : "Sauvegarder"}</span>
                         </button>
+                        {saveError && (
+                            <span className="text-xs font-semibold text-red-500">{saveError}</span>
+                        )}
                         {isOwner && (
                             <button 
                                 onClick={handleDelete}

@@ -11,6 +11,7 @@ import MessageThread from "@/components/app/conversation/MessageThread";
 import { useSession } from "next-auth/react";
 import ImageCarousel from "@/components/app/conversation/ImageCarousel";
 import { buildMessageTree } from "@/lib/message-utils";
+import { messageService } from "@/services/message.service";
 
 export default function ConversationDetailPage() {
     const params = useParams();
@@ -40,15 +41,8 @@ export default function ConversationDetailPage() {
 
     // Mutation pour éditer un message
     const editMessageMutation = useMutation({
-        mutationFn: async ({ messageId, content }: { messageId: string; content: string }) => {
-            const response = await fetch(`/api/messages/${messageId}/edit`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content }),
-            });
-            if (!response.ok) throw new Error("Erreur lors de l'édition");
-            return response.json();
-        },
+        mutationFn: ({ messageId, content }: { messageId: string; content: string }) =>
+            messageService.edit(messageId, content),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['conversation', params.id] });
         },
@@ -56,13 +50,7 @@ export default function ConversationDetailPage() {
 
     // Mutation pour supprimer un message
     const deleteMessageMutation = useMutation({
-        mutationFn: async (messageId: string) => {
-            const response = await fetch(`/api/messages/${messageId}/delete`, {
-                method: "DELETE",
-            });
-            if (!response.ok) throw new Error("Erreur lors de la suppression");
-            return response.json();
-        },
+        mutationFn: (messageId: string) => messageService.remove(messageId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['conversation', params.id] });
         },
@@ -102,21 +90,7 @@ export default function ConversationDetailPage() {
         [conversationMessages]
     );
 
-    const conversationImageUrl = conversation?.imageUrl ?? null;
-    const conversationImages = useMemo(() => {
-        if (!conversationImageUrl) return null;
-
-        try {
-            const parsed = JSON.parse(conversationImageUrl);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                return parsed;
-            }
-        } catch (error) {
-            // noop: fallback to single image
-        }
-
-        return [conversationImageUrl];
-    }, [conversationImageUrl]);
+    const conversationImages = conversation?.images ?? [];
 
     if (isLoading) {
         return (
@@ -167,7 +141,7 @@ export default function ConversationDetailPage() {
             <div className="max-w-4xl mx-auto px-4 py-5">
                 {/* Images with Title */}
                 <div className="mb-4 bg-white dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-700 p-4">
-                    {conversationImages ? (
+                    {conversationImages.length > 0 ? (
                         <>
                             <ImageCarousel
                                 images={conversationImages}

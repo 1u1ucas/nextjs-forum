@@ -26,6 +26,7 @@ export interface ConversationWithExtend {
     content?: string | null;
     votes?: number;
     imageUrl?: string | null;
+    images?: string[];
     createdAt: Date;
     updatedAt: Date;
     deletedAt?: Date | null;

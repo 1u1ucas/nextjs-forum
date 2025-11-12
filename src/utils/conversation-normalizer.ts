@@ -36,10 +36,28 @@ export function normalizeMessage(message: ConversationMessageDto): ConversationM
 }
 
 export function normalizeConversation(dto: ConversationDto): ConversationWithExtend {
+    const images = (() => {
+        if (!dto.imageUrl) return [];
+
+        const value = dto.imageUrl;
+
+        try {
+            const parsed = typeof value === "string" ? JSON.parse(value) : value;
+            if (Array.isArray(parsed)) {
+                return parsed.filter((item): item is string => typeof item === "string" && item.length > 0);
+            }
+        } catch {
+            // noop
+        }
+
+        return typeof value === "string" && value.length > 0 ? [value] : [];
+    })();
+
     return {
         ...dto,
         content: dto.content ?? null,
         imageUrl: dto.imageUrl ?? null,
+        images,
         votes: dto.votes ?? 0,
         createdAt: new Date(dto.createdAt),
         updatedAt: new Date(dto.updatedAt),
