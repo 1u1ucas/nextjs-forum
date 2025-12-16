@@ -49,7 +49,8 @@ export async function PATCH(
         const targetRole = message.user?.role ?? "USER";
         const sessionRole = session.user.role ?? "USER";
         const canModerate =
-            sessionRole === "ADMIN" || (sessionRole === "MODERATOR" && targetRole === "USER");
+            sessionRole === "ADMIN" ||
+            (sessionRole === "MODERATOR" && targetRole !== "ADMIN");
 
         if (!isOwner && !canModerate) {
             return NextResponse.json(

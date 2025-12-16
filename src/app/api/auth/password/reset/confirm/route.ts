@@ -51,6 +51,16 @@ export async function POST(request: Request) {
             );
         }
 
+        if (user.password) {
+            const isSamePassword = await bcrypt.compare(password, user.password);
+            if (isSamePassword) {
+                return NextResponse.json(
+                    { error: "Le nouveau mot de passe doit être différent de l'ancien" },
+                    { status: 400 }
+                );
+            }
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
         await prisma.$transaction([

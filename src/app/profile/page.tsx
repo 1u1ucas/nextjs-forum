@@ -66,7 +66,7 @@ export default async function ProfilePage() {
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-6">
                 <section>
                     <h2 className="font-semibold mb-3 text-lg dark:text-white">Dernières conversations</h2>
                     {user.conversations.length > 0 ? (

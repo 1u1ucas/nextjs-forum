@@ -39,7 +39,8 @@ export default function MessageThread({
     const sessionRole = session?.user?.role ?? "USER";
     const targetRole = message.user?.role ?? "USER";
     const canModerateTarget =
-        sessionRole === "ADMIN" || (sessionRole === "MODERATOR" && targetRole === "USER");
+            sessionRole === "ADMIN" ||
+        (sessionRole === "MODERATOR" && targetRole !== "ADMIN");
     const canManage = isOwner || canModerateTarget;
     const hasReplies = Array.isArray(message.replies) && message.replies.length > 0;
     const isHighlighted = highlightedMessageId === message.id;

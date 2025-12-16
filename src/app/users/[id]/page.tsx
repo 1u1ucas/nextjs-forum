@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { PublicProfileResponse } from "@/types/profile.type";
+import { auth } from "@/lib/auth";
+import RoleManager from "@/components/app/user/RoleManager";
 
 async function getPublicProfile(userId: string): Promise<PublicProfileResponse | null> {
     const baseUrl =
@@ -35,18 +37,21 @@ export default async function PublicProfilePage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
-    const profile = await getPublicProfile(id);
+    const [profile, session] = await Promise.all([getPublicProfile(id), auth()]);
 
     if (!profile) {
         notFound();
     }
 
     const { user, conversations, messages, badges } = profile;
+    const isAdmin = session?.user?.role === "ADMIN";
+    const isSelf = session?.user?.id === user.id;
+    const canManageRole = isAdmin && !isSelf && user.role !== "ADMIN";
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-8">
             <div className="max-w-5xl mx-auto px-4 space-y-6">
-                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-700 p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-700 p-6 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                     <div className="flex items-center gap-4">
                         {user.image ? (
                             <Image
@@ -80,23 +85,28 @@ export default async function PublicProfilePage({
                             )}
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
-                        <div className="bg-gray-100 dark:bg-gray-900 rounded-lg px-4 py-3">
-                            <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Karma</p>
-                            <p className="text-lg font-semibold text-gray-900 dark:text-white">{user.karma}</p>
+                    <div className="flex flex-col gap-4 w-full lg:max-w-xs">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-3 text-center lg:text-left">
+                            <div className="bg-gray-100 dark:bg-gray-900 rounded-lg px-4 py-3">
+                                <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Karma</p>
+                                <p className="text-lg font-semibold text-gray-900 dark:text-white">{user.karma}</p>
+                            </div>
+                            <div className="bg-gray-100 dark:bg-gray-900 rounded-lg px-4 py-3">
+                                <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Conversations</p>
+                                <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                                    {user.stats.conversations}
+                                </p>
+                            </div>
+                            <div className="bg-gray-100 dark:bg-gray-900 rounded-lg px-4 py-3">
+                                <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Messages</p>
+                                <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                                    {user.stats.messages}
+                                </p>
+                            </div>
                         </div>
-                        <div className="bg-gray-100 dark:bg-gray-900 rounded-lg px-4 py-3">
-                            <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Conversations</p>
-                            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                                {user.stats.conversations}
-                            </p>
-                        </div>
-                        <div className="bg-gray-100 dark:bg-gray-900 rounded-lg px-4 py-3">
-                            <p className="text-xs uppercase text-gray-500 dark:text-gray-400">Messages</p>
-                            <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                                {user.stats.messages}
-                            </p>
-                        </div>
+                        {canManageRole && (
+                            <RoleManager userId={user.id} initialRole={user.role} />
+                        )}
                     </div>
                 </div>
 
