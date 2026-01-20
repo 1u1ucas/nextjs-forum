@@ -1,0 +1,26 @@
+# Ralph Progress Log
+
+## Completed Work
+- Story #1: Added 'Essayer une démo' ghost button to landing-hero.tsx
+- Story #2: Added seekTo function to use-tone-player.ts, made progress bar clickable
+- Story #3: Added keyboard shortcuts (Space, Escape, arrows, M, L) with tooltip
+- Story #5: Implemented skipBackward/skipForward using seekTo
+- Story #7: Added instrument favorites with star icons and localStorage
+- Story #8: Created usePreferences hook with debounced localStorage persistence
+- Story #11: Implemented native Fullscreen API with CSS fallback, added fullscreenchange event sync
+- Story #12: Created useRecentFiles hook, added recent section to library page
+- Story #13: Added file upload with IndexedDB storage, reader loads from IndexedDB first
+- Story #14: Added note highlighting during playback using OSMD graphic notes
+- Story #15: Implemented share functionality with Web Share API and clipboard fallback
+- Story #16: Added visual metronome with pulsing circle that flashes on each beat
+- Story #17: Implemented settings page with working sliders and instrument dropdown
+- Story #7: Added user registration with bcrypt (12 rounds), validation, and client-side form handling
+- Story #8: Configured NextAuth.js with CredentialsProvider, JWT session, and type extensions
+- Story #9: Implemented login page with signIn, remember me, error handling, and redirect
+- Story #10: Added SessionProvider, useAuth hook, and auth-aware Header component
+- Story #11: Created middleware.ts with protected routes, callbackUrl, and role-based protection
+- Story #12: Removed partitionNoteOffset state and UI control from reader page
+- Story #13: Added paginated mode to SheetMusicViewer with page visibility control
+- Story #14: Added page navigation with arrow buttons, PageUp/PageDown shortcuts, and page indicator
+- Story #15: Enhanced playback cursor for paginated mode with page-aware visibility
+- Story #16: Added automatic page turn during playback with OSMD measure-to-page mapping
