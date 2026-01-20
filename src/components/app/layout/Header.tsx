@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, User, LogOut, Menu, Bookmark } from "lucide-react";
+import { Plus, User, LogOut, Menu, Bookmark, Calendar } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -125,6 +125,16 @@ export default function Header({ onCreateClick }: HeaderProps) {
                                             >
                                                 <Bookmark className="w-4 h-4" />
                                                 Sauvegardés
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    router.push("/reservations");
+                                                    setShowMenu(false);
+                                                }}
+                                                className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-sm dark:text-white"
+                                            >
+                                                <Calendar className="w-4 h-4" />
+                                                Mes réservations
                                             </button>
                                             <button
                                                 onClick={() => {

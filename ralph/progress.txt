@@ -24,3 +24,6 @@
 - Story #14: Added page navigation with arrow buttons, PageUp/PageDown shortcuts, and page indicator
 - Story #15: Enhanced playback cursor for paginated mode with page-aware visibility
 - Story #16: Added automatic page turn during playback with OSMD measure-to-page mapping
+
+## 2026-01-20 - Reservation System with Mock Payment
+- Stories #1-16: Implemented complete reservation system with Prisma model, TypeScript types, REST APIs (CRUD + pay/cancel), client service, UI pages (list/detail), ReservationCard component with pay/cancel dialogs, Header navigation link, Playwright E2E testing setup and tests

@@ -7,6 +7,7 @@ export const config = {
         "/saved/:path*",
         "/conversation/create",
         "/conversation/:path*/create",
+        "/reservations/:path*",
     ],
 };
 
